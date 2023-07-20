@@ -126,7 +126,7 @@ jobs:
           event: fail
           template: basic_fail_1
       - slack/notify:
-          channel: ci-channel
+          channel: bucket1
           event: pass
           template: basic_success_1    
     
