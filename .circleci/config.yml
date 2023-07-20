@@ -51,6 +51,14 @@ jobs:
       - save_cache:
           paths: [frontend/node_modules]
           key: frontend-build
+      - slack/notify:
+          channel: bucket1
+          event: fail
+          template: basic_fail_1
+      - slack/notify:
+          channel: bucket1
+          event: pass
+          template: basic_success_1
 
   build-backend:
     docker:
@@ -68,6 +76,14 @@ jobs:
       - save_cache:
           paths: [backend/node_modules]
           key: backend-build
+      - slack/notify:
+          channel: bucket1
+          event: fail
+          template: basic_fail_1
+      - slack/notify:
+          channel: bucket1
+          event: pass
+          template: basic_success_1
 
   test-frontend:
     docker:
@@ -83,7 +99,14 @@ jobs:
             cd frontend
             npm install
             npm run test
-                
+      - slack/notify:
+          channel: bucket1
+          event: fail
+          template: basic_fail_1
+      - slack/notify:
+          channel: bucket1
+          event: pass
+          template: basic_success_1          
   test-backend:
     docker:
       - image: circleci/node:13.8.0
@@ -98,7 +121,15 @@ jobs:
             cd backend
             npm install
             npm run test
-            
+      - slack/notify:
+          channel: bucket1
+          event: fail
+          template: basic_fail_1
+      - slack/notify:
+          channel: bucket1
+          event: pass
+          template: basic_success_1    
+    
   scan-frontend:
     docker:
       - image: circleci/node:13.8.0
@@ -115,7 +146,15 @@ jobs:
             npm audit fix --audit-level=critical --force
             npm audit fix --force
             npm audit --audit-level=critical
-
+      - slack/notify:
+          channel: bucket1
+          event: fail
+          template: basic_fail_1
+      - slack/notify:
+          channel: bucket1
+          event: pass
+          template: basic_success_1
+  
   scan-backend:
     docker:
       - image: circleci/node:13.8.0
@@ -132,6 +171,14 @@ jobs:
             npm audit fix --audit-level=critical --force
             npm audit fix --force
             npm audit --audit-level=critical
+      - slack/notify:
+          channel: bucket1
+          event: fail
+          template: basic_fail_1
+      - slack/notify:
+          channel: bucket1
+          event: pass
+          template: basic_success_1
 
   deploy-infrastructure:
     docker:
