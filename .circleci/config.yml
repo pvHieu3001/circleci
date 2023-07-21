@@ -57,6 +57,7 @@ jobs:
           template: basic_fail_1
       - slack/notify:
           event: pass
+          channel: bucket1
           template: basic_success_1
 
   build-backend:
