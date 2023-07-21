@@ -35,26 +35,26 @@ commands:
     parameters:
       Workflow_ID:
         type: string
-        default: ${CIRCLE_WORKFLOW_ID0:0:7}
+        default: ${CIRCLE_WORKFLOW_ID:0:7}
     steps:
       - run:
           name: Delete S3
           when: on_fail
           command: |
-            aws s3 rm s3://udapeople-${CIRCLE_WORKFLOW_ID0:0:7} --recursive
+            aws s3 rm s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
       - run:
           name: Destroy environments
           when: on_fail
           command: |
-            aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID0:0:7}
-            aws cloudformation delete-stack --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID0:0:7}
+            aws cloudformation delete-stack --stack-name udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
+            aws cloudformation delete-stack --stack-name udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
 
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
     parameters:
       Workflow_ID:
         type: string
-        default: ${CIRCLE_WORKFLOW_ID0:0:7}
+        default: ${CIRCLE_WORKFLOW_ID:0:7}
     steps:
       - run:
           name: Revert migrations
@@ -229,8 +229,8 @@ jobs:
             aws cloudformation deploy \
               --template-file .circleci/files/backend.yml \
               --tags project=udapeople \
-              --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID0:0:7}" \
-              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID0:0:7}"
+              --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
               exit 1
       - run:
           name: Ensure front-end infrastructure exist
@@ -238,14 +238,14 @@ jobs:
             aws cloudformation deploy \
               --template-file .circleci/files/frontend.yml \
               --tags project=udapeople \
-              --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID0:0:7}" \
-              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID0:0:7}"  
+              --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  
               exit 1
       - run:
           name: Add back-end ip to ansible inventory
           command: |
             aws ec2 describe-instances \
-                --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID0:0:7}" \
+                --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
                 --query "Reservations[*].Instances[*].PublicIpAddress" \
                 --output text >> ~/project/.circleci/ansible/inventory.txt
             cat .circleci/ansible/inventory.txt
@@ -316,7 +316,7 @@ jobs:
           command: |
             if grep -q "has been executed seccessfully." ~/project/backend/migrations_dump.txt
             then
-              curl https://kvdb.io/WsQdPf2TjArdBLF3pQPr9T/migration_${CIRCLE_WORKFLOW_ID0:0:7} -d '1'
+              curl https://kvdb.io/WsQdPf2TjArdBLF3pQPr9T/migration_${CIRCLE_WORKFLOW_ID:0:7} -d '1'
             fi
      # Here's where you will add some code to rollback on failure
       - destroy-environment
@@ -340,7 +340,7 @@ jobs:
           name: Get backend url
           command: |
             BACKEND_IP=$(aws ec2 describe-instances \
-                --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID0:0:7}" \
+                --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
                 --query "Reservations[*].Instances[*].PublicIpAddress" \
                 --output text)
             echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
@@ -351,16 +351,19 @@ jobs:
             eport NODE_ENV=production
             cd frontend
             npm run build
-            aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID0:0:7} --recursive
+            aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
       # Here's where you will add some code to rollback on failure
       - destroy-environment
       - revert-migrations
                     
   deploy-backend:
     docker:
-      - image: python:3.7-alpine3.11
+      - image: cimg/base:stable
     steps:
       - checkout
+      - install_awscli
+      - install_ansible
+      - install_nodejs
       - attach_workspace:
           at: ~/
       - add_ssh_keys:
@@ -369,30 +372,46 @@ jobs:
           name: Install dependencies
           command: |
             apk add --update ansible
+            cd backend
+            npm install
       - run:
           name: Deploy backend
           command: |
-            ansible-playbook deploy-backend.yml -i inventory
+            export NODE_ENV=production
+            export TYPEORM_ENTITIES= ./modules/domain/**/*.entity{.ts,.js}
+            export TYPEORM_MIGRATIONS= ./migrations/*{.ts,.js}
+            export TYPEORM_MIGRATIONS_DIR= ./migarions
+
+            cd .circleci/ansible
+            cat inventory.txt
+            ansible-playbook deploy-backend.yml -i inventory.txt
       # Here's where you will add some code to rollback on failure
-      - slack/notify:
-          event: fail
-          channel: bucket1
-          template: basic_fail_1
+      - destroy-environment
+      - revert-migrations
 
   smoke-test:
     docker:
-      - image: alpine:latest
+      - image: python:3.10-alpine3.16
     steps:
       - checkout
+      - attach_workspace:
+          at: ~/
       - run:
           name: Install dependencies
           command: |
-            apk add --update curl
+            apk add --update curl tar gzip nodejs npm aws-cli
+            pip install awscli
       - run:
           name: Get backend url
           command: |
-            export URL_BACKEND=""
-            export URL_FRONTEND=""
+            BACKEND_IP=$(aws ec2 describe-instances \
+                --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+                --query "Reservations[*].Instances[*].PublicIpAddress" \
+                --output text)
+            echo ${BACKEND_IP}
+
+            export URL_BACKEND="http://"${BACKEND_IP}:3030"
+            export URL_FRONTEND="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-1.amazonaws.com/#/employees"
       - run:
           name: Backend smoke test.
           command: |
@@ -412,10 +431,8 @@ jobs:
               return 1
             fi
       # Here's where you will add some code to rollback on failure
-      - slack/notify:
-          event: fail
-          channel: bucket1
-          template: basic_fail_1
+      - destroy-environment
+      - revert-migrations
 
   cloudfront-update:
     docker:
