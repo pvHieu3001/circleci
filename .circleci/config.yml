@@ -436,9 +436,11 @@ jobs:
 
   cloudfront-update:
     docker:
-      - image: amazon/aws-cli
+      - image: cimg/base:stable
     steps:
       - checkout
+      - install_awscli
+      - install_nodejs
       - run:
           name: Install dependencies
           command: |
@@ -446,9 +448,14 @@ jobs:
       - run:
           name: Update cloudfront distribution
           command: |
-            # your code here
+            aws cloudformation deploy \
+              --template-file .circleci/files/cloudfront.yml \
+              --tags project=udapeople \
+              --stack-name InitialStack \
+              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  
       # Here's where you will add some code to rollback on failure  
-
+      - destroy-environment
+      - revert-migrations
   cleanup:
     docker:
       - image: amazon/aws-cli
