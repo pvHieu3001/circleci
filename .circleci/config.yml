@@ -52,12 +52,12 @@ jobs:
           paths: [frontend/node_modules]
           key: frontend-build
       - slack/notify:
-          channel: bucket1
           event: fail
+          channel: bucket1
           template: basic_fail_1
       - slack/notify:
-          channel: bucket1
           event: pass
+          channel: bucket1
           template: basic_success_1
 
   build-backend:
@@ -77,12 +77,12 @@ jobs:
           paths: [backend/node_modules]
           key: backend-build
       - slack/notify:
-          channel: bucket1
           event: fail
+          channel: bucket1
           template: basic_fail_1
       - slack/notify:
-          channel: bucket1
           event: pass
+          channel: bucket1
           template: basic_success_1
 
   test-frontend:
@@ -100,12 +100,12 @@ jobs:
             npm install
             npm run test
       - slack/notify:
-          channel: bucket1
           event: fail
+          channel: bucket1
           template: basic_fail_1
       - slack/notify:
-          channel: bucket1
           event: pass
+          channel: bucket1
           template: basic_success_1          
   test-backend:
     docker:
@@ -122,12 +122,12 @@ jobs:
             npm install
             npm run test
       - slack/notify:
-          channel: bucket1
           event: fail
+          channel: bucket1
           template: basic_fail_1
       - slack/notify:
-          channel: bucket1
           event: pass
+          channel: bucket1
           template: basic_success_1    
     
   scan-frontend:
@@ -147,12 +147,12 @@ jobs:
             npm audit fix --force
             npm audit --audit-level=critical
       - slack/notify:
-          channel: bucket1
           event: fail
+          channel: bucket1
           template: basic_fail_1
       - slack/notify:
-          channel: bucket1
           event: pass
+          channel: bucket1
           template: basic_success_1
   
   scan-backend:
@@ -172,12 +172,12 @@ jobs:
             npm audit fix --force
             npm audit --audit-level=critical
       - slack/notify:
-          channel: bucket1
           event: fail
+          channel: bucket1
           template: basic_fail_1
       - slack/notify:
-          channel: bucket1
           event: pass
+          channel: bucket1
           template: basic_success_1
 
   deploy-infrastructure:
@@ -216,7 +216,7 @@ jobs:
       - destroy-environment
       - slack/notify:
           event: fail
-          mentions: '@EngineeringTeam'
+          channel: bucket1
           template: basic_fail_1
 
   configure-infrastructure:
@@ -238,8 +238,8 @@ jobs:
       # Here's where you will add some code to rollback on failure
       - slack/notify:
           event: fail
-          mentions: '@EngineeringTeam'
-          template: basic_fail_1   
+          channel: bucket1
+          template: basic_fail_1  
 
   run-migrations:
     docker:
@@ -265,8 +265,8 @@ jobs:
      # Here's where you will add some code to rollback on failure
       - slack/notify:
           event: fail
-          mentions: '@EngineeringTeam'
-          template: basic_fail_1  
+          channel: bucket1
+          template: basic_fail_1 
 
   deploy-frontend:
     docker:
@@ -290,8 +290,8 @@ jobs:
       # Here's where you will add some code to rollback on failure
       - slack/notify:
           event: fail
-          mentions: '@EngineeringTeam'
-          template: basic_fail_1   
+          channel: bucket1
+          template: basic_fail_1
                     
   deploy-backend:
     docker:
@@ -311,7 +311,7 @@ jobs:
       # Here's where you will add some code to rollback on failure
       - slack/notify:
           event: fail
-          mentions: '@EngineeringTeam'
+          channel: bucket1
           template: basic_fail_1
 
   smoke-test:
@@ -349,7 +349,7 @@ jobs:
       # Here's where you will add some code to rollback on failure
       - slack/notify:
           event: fail
-          mentions: '@EngineeringTeam'
+          channel: bucket1
           template: basic_fail_1
 
   cloudfront-update:
