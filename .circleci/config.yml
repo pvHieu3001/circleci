@@ -3,11 +3,45 @@ version: 2.1
 orbs:
   slack: circleci/slack@4.12.1
 commands:
+  install_awscli:
+    description: Install awscli.
+    steps:
+      - run:
+          name: Install awscli.
+          command: |
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
+  install_ansible:
+    description: Install ansible.
+    steps:
+      - run:
+          name: Install ansible.
+          command: |
+            sudo apt-add-repository ppa:ansible/ansible
+            sudo apt update
+            sudo apt install ansible
+  install_nodejs:
+    description: Install nodejs.
+    steps:
+      - run:
+          name: Install nodejs.
+          command: |
+            curl -sL https://deb.nodesource.com/setup_13.x | sudo -E bash -
+            sudo apt install nodejs -y
+
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
     parameters:
-      # Add parameter here   
+      Workflow_ID:
+        type: string
+        default: ${CIRCLE_WORKFLOW_ID0:0:7}
     steps:
+      - run:
+          name: Delete S3
+          when: on_fail
+          command: |
+            aws s3 rm s3://udapeople-${CIRCLE_WORKFLOW_ID0:0:7} --recursive
       - run:
           name: Destroy environments
           when: on_fail
@@ -18,19 +52,20 @@ commands:
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
     parameters:
-      # Add parameter here     
+      Workflow_ID:
+        type: string
+        default: ${CIRCLE_WORKFLOW_ID0:0:7}
     steps:
       - run:
           name: Revert migrations
-          # Add when this will run
-          command: |
-            # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
-            SUCCESS = 1
+          when: on_fail
+          command: |           
+            SUCCESS = $(curl --insecure https://kvdb.io/${KVDB_BUCKET}/migration_<< parameters.Workflow_ID >>)
             if(( $SUCCESS==1 )); 
             then
-            #  cd ~/project/backend
-            #  npm install
-            #  Add revert code here. You can find this in the Getting Started section.
+              cd ~/project/backend
+              npm install
+              npm run migration:revert
               exit 1
             fi
             
@@ -92,7 +127,7 @@ jobs:
       - checkout
       - restore_cache:
           name: Restore cache
-          keys: frontend-build
+          keys: [frontend-build]
       - run: 
           name: Run frontend test
           command: |
@@ -114,7 +149,7 @@ jobs:
       - checkout
       - restore_cache:
           name: Restore cache
-          keys: backend-build
+          keys: [backend-build]
       - run:
           name: Run backend test
           command: |
@@ -137,7 +172,7 @@ jobs:
       - checkout
       - restore_cache:
           name: Restore cache
-          keys: frontend-build
+          keys: [frontend-build]
       - run:
           name: Scan frontend
           command: |
@@ -162,7 +197,7 @@ jobs:
       - checkout
       - restore_cache:
           name: Restore cache
-          keys: backend-build
+          keys: [backend-build]
       - run:
           name: Scan backend
           command: |
@@ -186,6 +221,9 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Install tar, gzip, git
+          command: yum -y install tar gzip git
+      - run:
           name: Ensure back-end infrastructure exists
           command: |
             aws cloudformation deploy \
@@ -206,18 +244,17 @@ jobs:
       - run:
           name: Add back-end ip to ansible inventory
           command: |
-            # Your code here
-            exit 1
+            aws ec2 describe-instances \
+                --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID0:0:7}" \
+                --query "Reservations[*].Instances[*].PublicIpAddress" \
+                --output text >> ~/project/.circleci/ansible/inventory.txt
+            cat .circleci/ansible/inventory.txt
       - persist_to_workspace:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
       # Here's where you will add some code to rollback on failure
       - destroy-environment
-      - slack/notify:
-          event: fail
-          channel: bucket1
-          template: basic_fail_1
 
   configure-infrastructure:
     docker:
@@ -226,20 +263,39 @@ jobs:
       - checkout
       - add_ssh_keys:
           fingerprints: ["27:b8:14:d3:6d:d2:41:5b:23:2d:3b:f7:59:96:e1:c1"]
-      # attach workspace
+      - attach workspace:
+          at: ~/
       - run:
           name: Install dependencies
           command: |
             apk add --update ansible
+            apk add --update tar gzip ansible nodejs npm curl
+            pip install awscli
       - run:
           name: Configure server
           command: |
+            echo ENVIRONMENT=production >> "backend/.env"
+            echo TYPEORM_CONNECTION= $TYPEORM_CONNECTION >> "backend/.env"
+            echo AWS_ACCESS_KEY_ID= $AWS_ACCESS_KEY_ID >> "backend/.env"
+            echo AWS_DEFAULT_REGION= $AWS_DEFAULT_REGION >> "backend/.env"
+            echo AWS_SECRET_ACCESS_KEY= $AWS_SECRET_ACCESS_KEY >> "backend/.env"
+            echo SLACK_ACCESS_TOKEN= $SLACK_ACCESS_TOKEN >> "backend/.env"
+            echo SLACK_DEFAULT_CHANEL= $SLACK_DEFAULT_CHANEL > "backend/.env"
+            echo TYPEORM_DATABASE= $TYPEORM_DATABASE >> "backend/.env"
+            echo TYPEORM_ENTITIES= $TYPEORM_ENTITIES >> "backend/.env"
+            echo TYPEORM_HOST= $TYPEORM_HOST >> "backend/.env"
+            echo TYPEORM_MIGRATIONS= $TYPEORM_MIGRATIONS >> "backend/.env"
+            echo TYPEORM_MIGRATIONS_DIR= $TYPEORM_MIGRATIONS_DIR >> "backend/.env"
+            echo TYPEORM_PASSWORD= $TYPEORM_PASSWORD >> "backend/.env"
+            echo TYPEORM_PORT= $TYPEORM_PORT >> "backend/.env"
+            echo TYPEORM_USERNAME= $TYPEORM_USERNAME >> "backend/.env"
+            echo AWS_SESION_TOKEN= $AWS_SESION_TOKEN >> "backend/.env"
+            cat backend/.env
+
+            cd .circleci/ansible
             ansible-playbook -i inventory.txt configure-server.yml
       # Here's where you will add some code to rollback on failure
-      - slack/notify:
-          event: fail
-          channel: bucket1
-          template: basic_fail_1  
+      - destroy-environment
 
   run-migrations:
     docker:
@@ -263,43 +319,52 @@ jobs:
               curl https://kvdb.io/WsQdPf2TjArdBLF3pQPr9T/migration_${CIRCLE_WORKFLOW_ID0:0:7} -d '1'
             fi
      # Here's where you will add some code to rollback on failure
-      - slack/notify:
-          event: fail
-          channel: bucket1
-          template: basic_fail_1 
+      - destroy-environment
+      - revert-migrations
 
   deploy-frontend:
     docker:
-      - image: amazon/aws-cli
+      - image: python:alpine3.16
     steps:
       - checkout
+      - attach workspace:
+          at: ~/
       - run:
           name: Install dependencies
           command: |
-            # your code here
+            apk add --update tar gzip ansible nodejs npm curl
+            pip install awscli
+            cd frontend
+            npm install
       - run:
           name: Get backend url
           command: |
-            # your code here
-            export API_URL="http://${BACKEND_IP}:3030"
-            echo "${API_URL}"
+            BACKEND_IP=$(aws ec2 describe-instances \
+                --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID0:0:7}" \
+                --query "Reservations[*].Instances[*].PublicIpAddress" \
+                --output text)
+            echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
+            cat frontend/.env
       - run:
           name: Deploy frontend objects
           command: |
-            # your code here
+            eport NODE_ENV=production
+            cd frontend
+            npm run build
+            aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID0:0:7} --recursive
       # Here's where you will add some code to rollback on failure
-      - slack/notify:
-          event: fail
-          channel: bucket1
-          template: basic_fail_1
+      - destroy-environment
+      - revert-migrations
                     
   deploy-backend:
     docker:
       - image: python:3.7-alpine3.11
     steps:
       - checkout
+      - attach workspace:
+          at: ~/
       - add_ssh_keys:
-          fingerprints: [""]
+          fingerprints: ["27:b8:14:d3:6d:d2:41:5b:23:2d:3b:f7:59:96:e1:c1"]
       - run:
           name: Install dependencies
           command: |
@@ -403,7 +468,7 @@ workflows:
           requires: [test-frontend, test-backend, scan-frontend, scan-backend]
           filters:
             branches:
-              only: [test-feature-branch]
+              only: [main]
       - configure-infrastructure:
           requires: [deploy-infrastructure]
       - run-migrations:
