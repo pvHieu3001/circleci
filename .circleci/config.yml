@@ -406,7 +406,6 @@ jobs:
             export TYPEORM_MIGRATIONS=./migrations/*{.ts,.js}
 
             cd backend
-            npm i
             npm run build
             cd ..
             tar -C backend -czvf artifact.tar.gz .
