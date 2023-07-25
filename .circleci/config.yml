@@ -396,7 +396,7 @@ jobs:
             apk add --update tar gzip ansible nodejs npm curl
             pip install awscli
             cd backend
-            npm install
+            npm i
       - run:
           name: Deploy backend
           command: |
@@ -404,8 +404,8 @@ jobs:
             npm run build
             cd ..
             tar -C backend -czvf artifact.tar.gz .
-
             cd .circleci/ansible
+            echo "Contents of the inventory.txt: "
             cat inventory.txt
             ansible-playbook deploy-backend.yml -i inventory.txt
       # Here's where you will add some code to rollback on failure
