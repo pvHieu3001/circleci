@@ -334,6 +334,7 @@ jobs:
             echo TYPEORM_PORT=$TYPEORM_PORT >> "backend/.env"
             echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> "backend/.env"
             echo AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN >> "backend/.env"
+            cat backend/.env
 
             cd backend
             npm install
