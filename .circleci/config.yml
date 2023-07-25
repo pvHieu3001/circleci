@@ -440,6 +440,9 @@ jobs:
             export URL_BACKEND="http://${BACKEND_IP}:3030"
             echo "${URL_BACKEND}"
 
+            echo "sleep for 1 minute"
+            sleep 60
+
             if curl "${URL_BACKEND}/api/status" | grep "ok"
             then
               return 0
