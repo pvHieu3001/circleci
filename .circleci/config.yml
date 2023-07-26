@@ -527,7 +527,8 @@ jobs:
                 --output text)
             echo stack names: "${STACKS[@]}"
 
-            export OldWorkflowID=$(curl --insecure https://kvdb.io/${KVDB_BUCKET}/old_workflow_id3)
+            export OldWorkflowID= cat ~/OldWorkFlowId.txt
+            echo $OldWorkFlowId
       - run:
           name: Remove old stacks and files
           command: |
