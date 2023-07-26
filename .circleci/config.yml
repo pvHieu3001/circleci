@@ -506,7 +506,7 @@ jobs:
             aws cloudformation deploy \
               --template-file .circleci/files/cloudfront.yml \
               --tags project=udapeople \
-              --stack-name "InitialStack" \
+              --stack-name InitialStack \
               --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}"  
 
             echo Curent Workflow Id: "${CIRCLE_WORKFLOW_ID:0:7}"
@@ -522,7 +522,7 @@ jobs:
           name: Get old stack workflow id
           command: |
             export STACKS=$(aws cloudformation list-stacks \
-                --stack-status-filter CREATE_COMPLETE --no-paginate" \
+                --stack-status-filter CREATE_COMPLETE --no-paginate \
                 --query "StackSummaries[*].StackName" \
                 --output text)
             echo stack names: "${STACKS[@]}"
