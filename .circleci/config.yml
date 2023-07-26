@@ -516,9 +516,9 @@ jobs:
     docker:
       - image: amazon/aws-cli
     steps:
-      - checkout
+      - checkout  
       - run:
-          name: Get old stack workflow id
+          name: Remove old stacks and files
           command: |
             export STACKS=$(aws cloudformation list-stacks \
                 --stack-status-filter CREATE_COMPLETE --no-paginate \
@@ -528,9 +528,7 @@ jobs:
 
             export OldWorkflowID=$(curl --insecure https://kvdb.io/${KVDB_BUCKET}/oldworkflowid)
             echo Old WorkFlow Id: $OldWorkFlowId
-      - run:
-          name: Remove old stacks and files
-          command: |
+            
             if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
             then
               aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
