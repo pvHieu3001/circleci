@@ -501,7 +501,7 @@ jobs:
             echo "Old Wokflow ID: $OLD_WORKFLOW_ID"
             curl https://kvdb.io/7AAAx7zCFzvvuXqD48TkEZ/oldworkflowid -d "${OLD_WORKFLOW_ID}"
       - run:
-          name: Update cloudfront distribution
+          name: Update cloudfront distribution 
           command: |
             aws cloudformation deploy \
               --template-file .circleci/files/cloudfront.yml \
