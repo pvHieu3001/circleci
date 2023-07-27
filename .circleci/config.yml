@@ -348,7 +348,7 @@ jobs:
             then
               echo "${KVDB_BUCKET}"
               echo "https://kvdb.io/${KVDB_BUCKET}/migration_${CIRCLE_WORKFLOW_ID:0:7}"
-              curl https://kvdb.io/WsQdPf2TjArdBLF3pQPr9T/migration_${CIRCLE_WORKFLOW_ID:0:7} -d '1'
+              curl https://kvdb.io/7AAAx7zCFzvvuXqD48TkEZ/migration_${CIRCLE_WORKFLOW_ID:0:7} -d '1'
             fi
      # Here's where you will add some code to rollback on failure
       - destroy-environment
