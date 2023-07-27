@@ -60,7 +60,7 @@ commands:
           name: Revert migrations
           when: on_fail
           command: |           
-            STATUS=$(curl --insecure https://kvdb.io/${KVDB_BUCKET}/migration_<< parameters.Workflow_ID >>)
+            STATUS=$(curl --insecure https://kvdb.io/7AAAx7zCFzvvuXqD48TkEZ/migration_<< parameters.Workflow_ID >>)
             echo $STATUS
             if [[ "$STATUS"=="1" ]]; 
             then
@@ -346,8 +346,7 @@ jobs:
           command: |
             if grep -q "has been executed seccessfully." ~/project/backend/migrations_dump.txt
             then
-              echo "${KVDB_BUCKET}"
-              echo "https://kvdb.io/${KVDB_BUCKET}/migration_${CIRCLE_WORKFLOW_ID:0:7}"
+              echo "Save migration workflow"
               curl -insecure https://kvdb.io/7AAAx7zCFzvvuXqD48TkEZ/migration_${CIRCLE_WORKFLOW_ID:0:7} -d '1'
             fi
      # Here's where you will add some code to rollback on failure
@@ -500,7 +499,7 @@ jobs:
               --no-paginate --output text)
 
             echo "Old Wokflow ID: $OLD_WORKFLOW_ID"
-            curl https://kvdb.io/${KVDB_BUCKET}/oldworkflowid -d "${OLD_WORKFLOW_ID}"
+            curl https://kvdb.io/7AAAx7zCFzvvuXqD48TkEZ/oldworkflowid -d "${OLD_WORKFLOW_ID}"
       - run:
           name: Update cloudfront distribution
           command: |
@@ -528,7 +527,7 @@ jobs:
                 --output text)
             echo stack names: "${STACKS[@]}"
 
-            export OldWorkflowID=$(curl --insecure https://kvdb.io/${KVDB_BUCKET}/oldworkflowid)
+            export OldWorkflowID=$(curl --insecure https://kvdb.io/7AAAx7zCFzvvuXqD48TkEZ/oldworkflowid)
             echo Old WorkFlow Id: $OldWorkFlowId
             
             if [[ "${STACKS[@]}" =~ "${OldWorkflowID}" ]]
