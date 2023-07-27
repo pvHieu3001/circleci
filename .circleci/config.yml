@@ -344,7 +344,7 @@ jobs:
       - run:
           name: Send migration results to kvdb.io
           command: |
-            if grep -q "has been executed seccessfully." ~/project/backend/migrations_dump.txt
+            if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
             then
               echo "Save migration workflow"
               curl -insecure https://kvdb.io/7AAAx7zCFzvvuXqD48TkEZ/migration_${CIRCLE_WORKFLOW_ID:0:7} -d '1'
