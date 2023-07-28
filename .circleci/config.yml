@@ -491,10 +491,9 @@ jobs:
           name: Save old workflowid
           command: |
             export OLD_WORKFLOW_ID=$(aws cloudformation \
-              list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
-              --no-paginate --output text)
-
-            echo "Old Wokflow ID: $OLD_WORKFLOW_ID"
+                      list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
+                      --no-paginate --output text)
+            echo "Old Workflow ID: $OLD_WORKFLOW_ID"
             curl https://kvdb.io/7AAAx7zCFzvvuXqD48TkEZ/oldworkflowid -d "${OLD_WORKFLOW_ID}"
       - run:
           name: Update cloudfront distribution 
@@ -515,7 +514,7 @@ jobs:
     steps:
       - checkout  
       - run:
-          name: Remove old stacks and files
+          name: Remove old stacks and files 
           command: |
             export STACKS=$(aws cloudformation list-stacks \
                 --stack-status-filter CREATE_COMPLETE --no-paginate \
@@ -531,8 +530,7 @@ jobs:
               aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
               aws cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowID}"
               aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldWorkflowID}"
-            fi
-
+            fi 
 workflows:
   default:
     jobs:
