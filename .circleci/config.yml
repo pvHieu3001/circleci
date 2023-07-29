@@ -55,8 +55,10 @@ commands:
       - run:
           name: Revert migrations
           when: on_fail
-          command: |           
+          command: | 
+            echo "nguuuu"          
             export STATUS_MIGRATION=$(curl --insecure https://kvdb.io/7AAAx7zCFzvvuXqD48TkEZ/migration_<< parameters.Workflow_ID >>)
+            echo "nguuuux2"
             echo "Status of migration: $STATUS_MIGRATION"
             if [[ "$STATUS_MIGRATION"=="1" ]]; 
             then

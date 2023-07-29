@@ -1,0 +1,9 @@
+Url github [URL01]: https://github.com/pvHieu3001/circleci
+
+Url s3 bucket [URL02]: http://udapeople-2beedfd.s3-website-us-east-1.amazonaws.com
+
+Url cloudFront [URL03]: http://dazqtk4qo5tvz.cloudfront.net
+
+Url backend status [URL04]: http://ec2-44-211-177-174.compute-1.amazonaws.com:3030/api/status
+
+Url Prometheus server [URL05]: http://ec2-3-82-187-25.compute-1.amazonaws.com:9090/graph
